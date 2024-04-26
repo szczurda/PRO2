@@ -14,16 +14,20 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import jakarta.annotation.security.RolesAllowed;
+import org.aspectj.weaver.ast.Not;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -52,6 +56,8 @@ public class AdminTouristAttractionManagerView extends HorizontalLayout {
     private NumberField ratingField;
 
     Button editButton, deleteButton;
+
+    BeanValidationBinder<TouristAttraction> binder = new BeanValidationBinder<>(TouristAttraction.class);
 
     public AdminTouristAttractionManagerView(EntityManagerService service, UserServiceImpl userService, SecurityService securityService) {
         this.service = service;
@@ -105,12 +111,13 @@ public class AdminTouristAttractionManagerView extends HorizontalLayout {
         initButtons();
         initFields();
         Dialog dialog = new Dialog();
-        ratingField.setValue(touristAttraction.getRating());
-        priceField.setValue(touristAttraction.getPrice());
-        nameField.setValue(touristAttraction.getName());
-        cityField.setValue(touristAttraction.getCity());
-        regionField.setValue(touristAttraction.getRegion());
-        categoryField.setValue(touristAttraction.getCategory());
+        binder.bind(ratingField, TouristAttraction::getRating, TouristAttraction::setRating);
+        binder.bind(cityField, TouristAttraction::getCity, TouristAttraction::setCity);
+        binder.bind(nameField, TouristAttraction::getName, TouristAttraction::setName);
+        binder.bind(regionField, TouristAttraction::getRegion, TouristAttraction::setRegion);
+        binder.bind(priceField, TouristAttraction::getPrice, TouristAttraction::setPrice);
+        binder.bind(categoryField, TouristAttraction::getCategory, TouristAttraction::setCategory);
+        binder.setBean(touristAttraction);
         fieldsContainer = new HorizontalLayout(leftInnerContainer, rightInnerContainer);
         fieldsContainer.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
         buttonsContainer = new HorizontalLayout(submitButton, cancelButton);
@@ -120,7 +127,11 @@ public class AdminTouristAttractionManagerView extends HorizontalLayout {
         mainContainer.getStyle().setTextAlign(Style.TextAlign.CENTER);
         cancelButton.addClickListener(e -> dialog.close());
         submitButton.addClickListener(e -> {
-
+            binder.writeBeanIfValid(touristAttraction);
+            service.editTouristAttraction(touristAttraction);
+            grid.setItems(service.findAllTouristAttractions());
+            Notification.show("Záznam upraven").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            dialog.close();
         });
         dialog.add(mainContainer);
         return dialog;

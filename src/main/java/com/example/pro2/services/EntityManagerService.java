@@ -112,4 +112,8 @@ public class EntityManagerService {
                 touristAttractionRepository.delete(touristAttraction);
             }
     }
+
+    public void editTouristAttraction(TouristAttraction touristAttraction) {
+        touristAttractionRepository.save(touristAttraction);
+    }
 }
